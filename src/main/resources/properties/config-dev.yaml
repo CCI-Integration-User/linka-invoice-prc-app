@@ -1,0 +1,12 @@
+#Dev Configuration File
+
+linka:
+  host: "linka-back.dev.limberfy.com"
+  basePath: "/api"
+  ruc: "20523833589"
+  
+db:
+  database: "Mule_Invoicing"
+  host: "10.1.13.118"
+  port: "1433"
+  

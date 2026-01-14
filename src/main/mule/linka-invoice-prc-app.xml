@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<flow name="linka-invoice-prc-app-flow" doc:id="5acb6bdb-89b1-4eb4-a519-fc71e12c01a6" initialState="started">
+		<scheduler doc:name="Runs every 30 mins" doc:id="ef637394-0310-4024-ad29-7968453acfe5" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="${scheduler.frequency}" timeUnit="MINUTES"/>
+			</scheduling-strategy>
+		</scheduler>
+		<set-variable value="#[uuid()]" doc:name="var: correlationId" doc:id="78b55f3f-aa0f-4c3f-96a0-c9da66d58f53" variableName="correlationId"/>
+		<logger level="INFO" doc:name="Start Of Transaction" doc:id="61fc432c-807c-4544-8614-ee4042df245e" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "Start of flow : " ++ flow.name,&#10;    message: flow.name ++" has Started",&#10;    correlationId: vars.correlationId&#10;}]'/>
+		<flow-ref doc:name="fetch-invoices-subflow" doc:id="bf2e6e51-0db9-4628-9f19-9094fb96a208" name="fetch-invoices-subflow"/>
+		<logger level="INFO" doc:name="End Of Transaction" doc:id="ab260e14-6d2b-44e9-a204-1155887a1c76" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "End of flow : " ++ flow.name,&#10;    message: flow.name ++" has Ended",&#10;    correlationId: vars.correlationId&#10;}]'/>
+	</flow>
+</mule>

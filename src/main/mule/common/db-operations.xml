@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<sub-flow name="db-insert-subflow" doc:id="c5087ae6-76db-45c0-87b6-2dc32c35d701" >
+		<logger level="INFO" doc:name="Start Of Transaction" doc:id="134ee3a3-2e80-487e-b46d-edc4262608a6" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "Start of flow : " ++ flow.name,&#10;    message: flow.name ++" has Started",&#10;    correlationId: vars.correlationId&#10;}]' />
+		<db:insert doc:name="Insert" doc:id="214e1e3c-7eec-4058-acaf-8b3cb8c87bbf" config-ref="Database_Config" autoGenerateKeys="true">
+			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
+			<db:input-parameters ><![CDATA[#[vars.dbPayload]]]></db:input-parameters>
+		</db:insert>
+		<logger level="INFO" doc:name="End Of Transaction" doc:id="1d9875dc-aa13-45ab-8673-9313c58e28ad" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "End of flow : " ++ flow.name,&#10;    message: flow.name ++" has Ended",&#10;    correlationId: vars.correlationId&#10;}]' />
+	</sub-flow>
+</mule>

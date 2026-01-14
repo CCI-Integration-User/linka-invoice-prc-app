@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<os:object-store name="Date_And_Ids_Object_Store" doc:name="Object store" doc:id="5c121c0c-010a-46ce-af61-e6ce9acdcc1f" entryTtl="40" entryTtlUnit="MINUTES" expirationInterval="10" />
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="c758ea3f-1762-4d73-9efd-91fb925d0399" basePath="#[vars.httpOperation.basePath]" >
+		<http:request-connection protocol="${https.protocol}" host="#[vars.httpOperation.host]" port="#[vars.httpOperation.port]" />
+	</http:request-config>
+	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="61407662-d93f-4281-b54c-8721b840fc35" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="1c7c4033-3897-4794-968c-f8f399024ad3" >
+		<db:mssql-connection host="#[vars.dbOperation.host]" port="#[vars.dbOperation.port]" user="#[vars.dbOperation.username]" password="#[vars.dbOperation.password]" databaseName="#[vars.dbOperation.database]" />
+	</db:config>
+	<configuration-properties doc:name="Configuration environment properties" doc:id="e138b09e-3d1f-4bd5-8357-78a9d2f8634d" file="properties/config-${mule.env}.yaml"/>
+	<configuration-properties doc:name="Configuration common property" doc:id="2a658c9f-52ee-4b29-8874-094d9a4d92ab" file="properties\common\common.yaml" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="00060455-6e30-4d9b-98e5-d9b24c2a1e2b" key="${mule.key}" file="properties\secure\config-${mule.env}-secure.yaml"/>
+	<global-property doc:name="Global Property" doc:id="99bb288b-a516-4d8b-98d5-2380221134ad" name="mule.env" value="dev" />
+	<global-property doc:name="Global Property" doc:id="5e6f4c15-c468-4295-926e-fbf6f29e9eb7" name="mule.key" value="CSI@Caelius12345" />
+</mule>
