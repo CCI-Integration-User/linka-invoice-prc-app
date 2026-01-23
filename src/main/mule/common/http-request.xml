@@ -11,7 +11,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 				<http:headers ><![CDATA[#[output json ---
 vars.httpOperation.headers default {}]]]></http:headers>
 				<http:uri-params ><![CDATA[#[output json ---
-vars.httpOperation.uriParamas default {}]]]></http:uri-params>
+vars.httpOperation.uriParams  default {}]]]></http:uri-params>
 				<http:query-params ><![CDATA[#[output json ---
 vars.httpOperation.queryParams default {}]]]></http:query-params>
 			</http:request>

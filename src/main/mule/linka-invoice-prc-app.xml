@@ -6,7 +6,7 @@
 	<flow name="linka-invoice-prc-app-flow" doc:id="5acb6bdb-89b1-4eb4-a519-fc71e12c01a6" initialState="started">
 		<scheduler doc:name="Runs every 30 mins" doc:id="ef637394-0310-4024-ad29-7968453acfe5" >
 			<scheduling-strategy >
-				<fixed-frequency frequency="${scheduler.frequency}" timeUnit="MINUTES"/>
+				<fixed-frequency frequency="${scheduler.frequency}" timeUnit="MINUTES" startDelay="5"/>
 			</scheduling-strategy>
 		</scheduler>
 		<set-variable value="#[uuid()]" doc:name="var: correlationId" doc:id="78b55f3f-aa0f-4c3f-96a0-c9da66d58f53" variableName="correlationId"/>

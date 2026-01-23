@@ -12,4 +12,20 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 		</db:insert>
 		<logger level="INFO" doc:name="End Of Transaction" doc:id="1d9875dc-aa13-45ab-8673-9313c58e28ad" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "End of flow : " ++ flow.name,&#10;    message: flow.name ++" has Ended",&#10;    correlationId: vars.correlationId&#10;}]' />
 	</sub-flow>
+	<sub-flow name="db-bulk-insert-subflow" doc:id="812e7ec6-ef1e-4f70-b773-035b3f5267bc" >
+		<logger level="INFO" doc:name="Start Of Transaction" doc:id="74a501ef-e964-498e-8df2-0a039e1f6e62" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "Start of flow : " ++ flow.name,&#10;    message: flow.name ++" has Started",&#10;    correlationId: vars.correlationId&#10;}]' />
+		<db:bulk-insert doc:name="Bulk insert" doc:id="80027952-a9f9-4032-af72-2e1c595bf1b1" config-ref="Database_Config">
+			<db:bulk-input-parameters ><![CDATA[#[vars.dbPayload]]]></db:bulk-input-parameters>
+			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
+		</db:bulk-insert>
+		<logger level="INFO" doc:name="End Of Transaction" doc:id="c9748ab5-0a66-4887-bd80-182efeaba344" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "End of flow : " ++ flow.name,&#10;    message: flow.name ++" has Ended",&#10;    correlationId: vars.correlationId&#10;}]' />
+	</sub-flow>
+	<sub-flow name="db-update-subflow" doc:id="00d68576-b6cc-44e7-bb1a-05b83cf56d62" >
+		<logger level="INFO" doc:name="Start Of Transaction" doc:id="b56dc4d3-3e6a-4f06-8a41-1341fc8c9b33" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "Start of flow : " ++ flow.name,&#10;    message: flow.name ++" has Started",&#10;    correlationId: vars.correlationId&#10;}]' />
+		<db:update doc:name="Update" doc:id="daaaff6b-5374-4aee-9f9e-c8bb7a7c85b8" config-ref="Database_Config">
+			<db:sql ><![CDATA[#[vars.query]]]></db:sql>
+			<db:input-parameters ><![CDATA[#[vars.dbPayload]]]></db:input-parameters>
+		</db:update>
+		<logger level="INFO" doc:name="End Of Transaction" doc:id="88d05aff-fc41-4cd4-9a74-19977c3b8723" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "End of flow : " ++ flow.name,&#10;    message: flow.name ++" has Ended",&#10;    correlationId: vars.correlationId&#10;}]' />
+	</sub-flow>
 </mule>
