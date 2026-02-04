@@ -17,5 +17,5 @@ linka:
   path:
     invoices: "/bill/"
     token: "/token/"
-    file: "/file/"
+    file: "/file/{fileId}/"
   port: "443"
