@@ -21,4 +21,5 @@ http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/sc
 	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="00060455-6e30-4d9b-98e5-d9b24c2a1e2b" key="${mule.key}" file="properties\secure\config-${mule.env}-secure.yaml"/>
 	<global-property doc:name="Global Property" doc:id="99bb288b-a516-4d8b-98d5-2380221134ad" name="mule.env" value="dev" />
 	<global-property doc:name="Global Property" doc:id="5e6f4c15-c468-4295-926e-fbf6f29e9eb7" name="mule.key" value="CSI@Caelius12345" />
+	<os:object-store name="Object_store_timestamp" doc:name="Object store" doc:id="b1d41eda-e2e9-4ab1-93c4-d30fe175eb5c" entryTtl="1" entryTtlUnit="DAYS" expirationInterval="2" expirationIntervalUnit="DAYS" />
 </mule>
