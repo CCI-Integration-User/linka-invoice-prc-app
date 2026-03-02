@@ -101,7 +101,7 @@ output application/json
 							<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
 output application/json
 ---
-"INSERT INTO Invoice(Currency,DetractionAmount,DetractionPercent,DueDate,InvoiceType,InvoiceDate,OperationTypeCode,PaymentTerms,PurchaseOrderNo,ReceptionDate,InvoiceNumber,GrossAmount) VALUES(:Currency,:DetractionAmount,:DetractionPercent,:DueDate,:InvoiceType,:InvoiceDate,:OperationTypeCode,:PaymentTerms,:PurchaseOrderNo,:ReceptionDate,:InvoiceNumber,:GrossAmount)"]]></ee:set-variable>
+"INSERT INTO Invoice(Currency,DetractionAmount,DetractionPercent,DueDate,InvoiceType,InvoiceDate,OperationTypeCode,PaymentTerms,PurchaseOrderNo,ReceptionDate,InvoiceNumber,GrossAmount,source) VALUES(:Currency,:DetractionAmount,:DetractionPercent,:DueDate,:InvoiceType,:InvoiceDate,:OperationTypeCode,:PaymentTerms,:PurchaseOrderNo,:ReceptionDate,:InvoiceNumber,:GrossAmount,:source)"]]></ee:set-variable>
 							<ee:set-variable variableName="dbPayload" ><![CDATA[%dw 2.0
 output application/json
 ---
@@ -118,7 +118,8 @@ output application/json
     "PurchaseOrderNo": vars.invoiceData.purchase_order.reference,
     "ReceptionDate": vars.invoiceData.reception_date,
     "InvoiceNumber": vars.invoiceData.sn,
-    "GrossAmount": vars.invoiceData.total
+    "GrossAmount": vars.invoiceData.total,
+    "source": "Linka"
 }]]></ee:set-variable>
 						</ee:variables>
 					</ee:transform>
