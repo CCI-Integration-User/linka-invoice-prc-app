@@ -14,7 +14,7 @@ output application/json
 ---
 (now() - |PT24H|) as String { format: "dd-MM-yyyy"}]]]></os:default-value>
 		</os:retrieve>
-		<os:retrieve-all doc:name="Retrieve Processed Ids" doc:id="c9b899f5-2aff-4f35-80a0-28092bfb13ad" objectStore="Date_And_Ids_Object_Store" target="processedIds"/>
+		<os:retrieve-all doc:name="Retrieve Processed Ids" doc:id="c9b899f5-2aff-4f35-80a0-28092bfb13ad" objectStore="Date_And_Ids_Object_Store" target="processedIds" targetValue="#[payload[0] default []]"/>
 		<ee:transform doc:name="var: httpOperation &amp; Request Payload" doc:id="691dcaff-7ff9-4346-aa70-bf4197440d81" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -69,17 +69,16 @@ now() as String{format: "dd-MM-yyyy"}]]]></os:value>
 				<ee:message >
 				</ee:message>
 				<ee:variables >
-					<ee:set-variable variableName="NotProcessedInvoice" ><![CDATA[%dw 2.0
-output application/json
+					<ee:set-variable variableName="NotProcessedInvoice" ><![CDATA[%dw 2.0 
+output application/json 
 ---
-([payload] map((item,index) -> {
-    "processed": if(vars.processedIds ~= {}) false  else vars.processedIds contains item.Id,
-    "data": item
-})) filter ((item, index) -> item.processed ~= false)]]></ee:set-variable>
-					<ee:set-variable variableName="invoiceData" ><![CDATA[%dw 2.0
-output application/json
+if(vars.processedIds contains payload.sn) {}
+else payload]]></ee:set-variable>
+					<ee:set-variable variableName="invoiceData" ><![CDATA[%dw 2.0 
+output application/json 
 ---
-payload]]></ee:set-variable>
+if(vars.processedIds contains payload.sn) {}
+else payload]]></ee:set-variable>
 				</ee:variables>
 			</ee:transform>
 			<choice doc:name="Choice" doc:id="330e3e4c-237a-4318-b60e-dd33b8c41f26" >
@@ -125,7 +124,7 @@ output application/json
 					</ee:transform>
 					<flow-ref doc:name="Insert Invoice" doc:id="783c3da8-8b4e-4d40-870e-31d2de51ad40" name="db-insert-subflow" target="invoiceId"/>
 					<logger level="INFO" doc:name="Log Invoice Response" doc:id="82f46edc-9f56-4586-aa1a-308ede411c4a" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "Invoice Response",&#10;	"response": vars.invoiceId&#10;}]'/>
-					<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;vars.invoiceData.extra_data map ((item, index) -&gt; {&#10;    "lineItemTotal": item.precio_venta_unitario,&#10;    "quantity": item.cantidad,&#10;    "itemCode": item.code default "",&#10;    "description": item.descripcion,&#10;    "lineNumber": item.orden,&#10;    "priceWithTax": (item.precio_venta) , &#10;    "unitOfMeasure": item.unidad_de_medida,&#10;    "unitPrice": item.valor_unitario,&#10;    "invoiceID": vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number&#10;})]' doc:name="Invoice Detail Payload" doc:id="225545eb-fc2f-4379-99ce-99831297ca41" />
+					<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;vars.invoiceData.extra_data map ((item, index) -&gt; {&#10;    "lineItemTotal": item.precio_venta_unitario,&#10;    "quantity": item.cantidad,&#10;    "itemCode": item.code default "",&#10;    "description": item.descripcion,&#10;    "lineNumber": item.orden,&#10;    "priceWithTax": (item.precio_venta) , &#10;    "unitOfMeasure": item.unidad_de_medida,&#10;    "unitPrice": item.valor_unitario,&#10;//    "invoiceID": vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number&#10;})]' doc:name="Invoice Detail Payload" doc:id="225545eb-fc2f-4379-99ce-99831297ca41" />
 					<foreach doc:name="Insert Invoice Detail and Tax" doc:id="d42271c2-15e8-4ac5-ae41-9ffba7d8e827" collection="#[payload]">
 						<ee:transform doc:name="var: dbOperation &amp; DB Payload" doc:id="e0e102f3-d5c7-46c8-85b8-52533e8c1508">
 							<ee:message>
@@ -277,7 +276,7 @@ output application/json
 ---
 {
 	"retentionAmount": vars.invoiceData.retention_data.importe_retencion ,
-	"retentionPercent": vars.invoiceData.retention_data.porcentaje_retencion ,
+	"retentionPercent": vars.invoiceData.retention_data.porcentaje_retencion,
 	"invoiceId": vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number
 }
 
@@ -310,10 +309,10 @@ output application/json
 	"database": Mule::p('db.database')
 }]]></ee:set-variable>
 							<ee:set-variable variableName="dbPayload"><![CDATA[%dw 2.0
-output application/json
+output application/java
 ---
 {
-	"fileData": (vars.invoiceFileResponse as String),
+	"fileData": (vars.invoiceFileResponse),
 	"name": payload.name,
 	"fileID": payload.id,
 	"fileType": payload."type",
@@ -329,15 +328,15 @@ output application/json
 							<logger level="INFO" doc:name="No Files Received " doc:id="f04f25df-af56-4deb-968b-0215e3800eba" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "No files received from Linka"&#10;}]'/>
 						</otherwise>
 					</choice>
+					<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;(vars.processedIds default []) as Array ++ [vars.invoiceData.sn]]" doc:name="var : processedIds" doc:id="f395d6ae-e123-433c-bc28-f4b7039c5409" variableName="processedIds" />
 				</when>
 				<otherwise >
 					<logger level="INFO" doc:name="Invoice Already Inserted" doc:id="27962a35-8a8c-4d81-a8fb-5daefad20bac" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "Invoice has already been inserted"&#10;}]'/>
 				</otherwise>
 			</choice>
-			<set-variable value="#[output json&#10;---&#10;[] + vars.invoiceData.sn]" doc:name="var : processedIds" doc:id="f395d6ae-e123-433c-bc28-f4b7039c5409" variableName="processedIds"/>
 		</foreach>
 		<os:store doc:name="Store ProcessedIds" doc:id="0a6647ab-2740-412b-bb3d-52dbf912ff8b" objectStore="Date_And_Ids_Object_Store" key="processedIds">
-			<os:value ><![CDATA[#[vars.processedIds]]]></os:value>
+			<os:value ><![CDATA[#[vars.processedIds default []]]]></os:value>
 		</os:store>
 		<logger level="INFO" doc:name="End Of Transaction" doc:id="663917ca-b7a8-4c7c-b211-d0169f2b1f96" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "End of flow : " ++ flow.name,&#10;    message: flow.name ++" has Ended",&#10;    correlationId: vars.correlationId&#10;}]' />
 	</sub-flow>
