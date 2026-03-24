@@ -43,7 +43,7 @@ output application/json
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Get Access Token" doc:id="79fa1aad-fb67-483a-b3ed-5368b291670f" name="http-request-subflow" target="accessToken"/>
-		<set-variable value="#[output application/json&#10;---&#10;{&#10;	&quot;method&quot;: &quot;GET&quot;,&#10;	&quot;host&quot;: Mule::p('linka.host'),&#10;	&quot;port&quot;: Mule::p('linka.port'),&#10;	&quot;path&quot;: Mule::p('linka.path.invoices'),&#10;	&quot;basePath&quot;: Mule::p('linka.basePath'),&#10;	&quot;queryParams&quot;: {&#10;		//&quot;issue_date&quot;: &quot;24-07-2025&quot;,&#10;		&quot;reception_date&quot;:  	vars.date,&#10;		&quot;eval_status&quot;: &quot;2&quot;&#10;	},&#10;	&quot;headers&quot;: {&#10;		&quot;Authorization&quot;: &quot;Bearer &quot; ++ vars.accessToken.access&#10;	}&#10;}]" doc:name="var : httpOperation" doc:id="5ca1c4a0-bea0-468f-9228-eb3d697b92be" variableName="httpOperation" />
+		<set-variable value="#[output application/json&#10;---&#10;{&#10;	&quot;method&quot;: &quot;GET&quot;,&#10;	&quot;host&quot;: Mule::p('linka.host'),&#10;	&quot;port&quot;: Mule::p('linka.port'),&#10;	&quot;path&quot;: Mule::p('linka.path.invoices'),&#10;	&quot;basePath&quot;: Mule::p('linka.basePath'),&#10;	&quot;queryParams&quot;: {&#10;		//&quot;issue_date&quot;: &quot;24-07-2025&quot;,&#10;//		&quot;reception_date&quot;:  	vars.date,&#10;		&quot;eval_status&quot;: &quot;2&quot;&#10;	},&#10;	&quot;headers&quot;: {&#10;		&quot;Authorization&quot;: &quot;Bearer &quot; ++ vars.accessToken.access&#10;	}&#10;}]" doc:name="var : httpOperation" doc:id="5ca1c4a0-bea0-468f-9228-eb3d697b92be" variableName="httpOperation" />
 		<flow-ref doc:name="Fetch Invoices" doc:id="b607ed71-a329-4ad6-80f9-e061e5677e5e" name="http-request-subflow"/>
 		<!-- [STUDIO:"Log Invoice Data"]<logger level="INFO" doc:name="Log Invoice Data" doc:id="17bc4c54-2d79-412a-a4a3-851d8f204298" message='#[output application/json&#10;&#45;&#45;-&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"invoiceData": payload&#10;}&#93;'/> [STUDIO] -->
 		<choice doc:name="Invoices Received?" doc:id="4befb5e7-361b-43c9-84ee-3486d6b4337d" >
@@ -124,7 +124,7 @@ output application/json
 					</ee:transform>
 					<flow-ref doc:name="Insert Invoice" doc:id="783c3da8-8b4e-4d40-870e-31d2de51ad40" name="db-insert-subflow" target="invoiceId"/>
 					<logger level="INFO" doc:name="Log Invoice Response" doc:id="82f46edc-9f56-4586-aa1a-308ede411c4a" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "Invoice Response",&#10;	"response": vars.invoiceId&#10;}]'/>
-					<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;vars.invoiceData.extra_data map ((item, index) -&gt; {&#10;    "lineItemTotal": item.precio_venta_unitario,&#10;    "quantity": item.cantidad,&#10;    "itemCode": item.code default "",&#10;    "description": item.descripcion,&#10;    "lineNumber": item.orden,&#10;    "priceWithTax": (item.precio_venta) , &#10;    "unitOfMeasure": item.unidad_de_medida,&#10;    "unitPrice": item.valor_unitario,&#10;//    "invoiceID": vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number&#10;})]' doc:name="Invoice Detail Payload" doc:id="225545eb-fc2f-4379-99ce-99831297ca41" />
+					<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;vars.invoiceData.extra_data map ((item, index) -&gt; {&#10;    "lineItemTotal": item.precio_venta_unitario,&#10;    "quantity": item.cantidad,&#10;    "itemCode": item.code default "",&#10;    "description": item.descripcion,&#10;    "lineNumber": item.orden,&#10;    "priceWithTax": (item.precio_venta) , &#10;    "unitOfMeasure": item.unidad_de_medida,&#10;    "unitPrice": item.valor_unitario,&#10;   "invoiceID": vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number&#10;})]' doc:name="Invoice Detail Payload" doc:id="225545eb-fc2f-4379-99ce-99831297ca41" />
 					<foreach doc:name="Insert Invoice Detail and Tax" doc:id="d42271c2-15e8-4ac5-ae41-9ffba7d8e827" collection="#[payload]">
 						<ee:transform doc:name="var: dbOperation &amp; DB Payload" doc:id="e0e102f3-d5c7-46c8-85b8-52533e8c1508">
 							<ee:message>
@@ -310,9 +310,12 @@ output application/json
 }]]></ee:set-variable>
 							<ee:set-variable variableName="dbPayload"><![CDATA[%dw 2.0
 output application/java
+import dw::Crypto
+import toBase64 from dw::core::Binaries
+var invoiceFile=toBase64(vars.invoiceFileResponse)
 ---
 {
-	"fileData": (vars.invoiceFileResponse),
+	"fileData":invoiceFile ,
 	"name": payload.name,
 	"fileID": payload.id,
 	"fileType": payload."type",
