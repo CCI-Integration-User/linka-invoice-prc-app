@@ -216,7 +216,7 @@ flatten(vars.invoiceData.gres map ((item, index) -> (item.data.bienes map ((item
      "NoteID": item.id,
     "productCode": item1.codigo,
     "quantity": item1.cantidad,
-    "invoiceId": vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number
+   "invoiceId": vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number
 } ))))
 
 ]]></ee:set-variable>
@@ -312,10 +312,20 @@ output application/json
 output application/java
 import dw::Crypto
 import toBase64 from dw::core::Binaries
-var invoiceFile=toBase64(vars.invoiceFileResponse)
+
 ---
+if((vars.invoiceFileResponse.^raw) contains "<?xml")
 {
-	"fileData":invoiceFile ,
+	"fileData":vars.invoiceFileResponse ,
+	"name": payload.name,
+	"fileID": payload.id,
+	"fileType": payload."type",
+	"uploadDate": payload.upload_date,
+	"invoiceId": vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number
+}
+else
+{
+	"fileData":toBase64(vars.invoiceFileResponse),
 	"name": payload.name,
 	"fileID": payload.id,
 	"fileType": payload."type",
