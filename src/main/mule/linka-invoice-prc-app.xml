@@ -1,17 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<flow name="linka-invoice-prc-app-flow" doc:id="5acb6bdb-89b1-4eb4-a519-fc71e12c01a6" initialState="started">
-		<scheduler doc:name="Runs every 30 mins" doc:id="ef637394-0310-4024-ad29-7968453acfe5" >
+		<scheduler doc:name="Runs every 6 Hours" doc:id="ef637394-0310-4024-ad29-7968453acfe5" >
 			<scheduling-strategy >
-				<cron expression="0 0 11 ? * *" timeZone="UTC" />
+				<cron expression="0 0 0/6 * * ?" timeZone="UTC" />
 			</scheduling-strategy>
 		</scheduler>
 		<set-variable value="#[uuid()]" doc:name="var: correlationId" doc:id="78b55f3f-aa0f-4c3f-96a0-c9da66d58f53" variableName="correlationId"/>
 		<logger level="INFO" doc:name="Start Of Transaction" doc:id="61fc432c-807c-4544-8614-ee4042df245e" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "Start of flow : " ++ flow.name,&#10;    message: flow.name ++" has Started",&#10;    correlationId: vars.correlationId&#10;}]'/>
 		<flow-ref doc:name="fetch-invoices-subflow" doc:id="bf2e6e51-0db9-4628-9f19-9094fb96a208" name="fetch-invoices-subflow"/>
 		<logger level="INFO" doc:name="End Of Transaction" doc:id="ab260e14-6d2b-44e9-a204-1155887a1c76" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "End of flow : " ++ flow.name,&#10;    message: flow.name ++" has Ended",&#10;    correlationId: vars.correlationId&#10;}]'/>
+	</flow>
+	<flow name="reconcile-invoices-scheduler-flow" doc:id="bc3e7d94-895e-4847-95c6-d1cc319b07a3" >
+		<scheduler doc:name="Runs every 2 Hours" doc:id="c125b5e0-1a12-4378-9b07-94118f277cbb" >
+			<scheduling-strategy >
+				<cron expression="0 0 1/2 * * ?" timeZone="UTC"/>
+			</scheduling-strategy>
+		</scheduler>
+		<set-variable value="#[uuid()]" doc:name="var: correlationId" doc:id="93b326fb-90af-4b29-bbcd-1dca6669db09" variableName="correlationId" />
+		<logger level="INFO" doc:name="Start Of Transaction" doc:id="7aedaed1-329f-4c08-b139-01416daf749b" message='#[%dw 2.0 &#10;output application/json &#10;--- &#10;{&#10;    flow : "Start of flow : " ++ flow.name,&#10;    message: flow.name ++" has Started",&#10;    correlationId: vars.correlationId&#10;}]' />
+		<ee:transform doc:name="Evaluate Time Window" doc:id="ea3b51e6-23bd-44bf-9233-a5472a5853cd" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="currentHourUtc" ><![CDATA[%dw 2.0
+output application/java
+---
+(now() >> "UTC") as LocalTime as String {format: "HH"} as Number]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Within 13:00-01:00 UTC?" doc:id="cd8a33bd-3290-46cd-a7c0-cffc9a7db118" >
+			<when expression="#[vars.currentHourUtc &gt;= 13 or vars.currentHourUtc &lt;= 1]">
+				<flow-ref doc:name="reconcile-invoices-subflow" doc:id="5b992466-fa92-4ab7-ba86-67f2d05c1ab9" name="reconcile-invoices-subflow" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Outside Time Window" doc:id="900c1f36-11f7-4faf-8c4b-d067248cbe26" message='#[%dw 2.0 &#10;output application/json&#10; --- &#10; { &#10; 	correlationId: vars.correlationId, &#10; 	message: "Reconciliation skipped — outside allowed window (13:00–01:00 UTC)", &#10; 	currentHour: vars.currentHourUtc&#10; }]' />
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="End Of Transaction" doc:id="ee8adb8d-f651-4909-b4f1-ec8697e3686b" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "End of flow : " ++ flow.name,&#10;    message: flow.name ++" has Ended",&#10;    correlationId: vars.correlationId&#10;}]' />
 	</flow>
 </mule>

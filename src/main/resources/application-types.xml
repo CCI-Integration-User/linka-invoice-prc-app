@@ -393,4 +393,6 @@ type: number]]></types:shape>
       </types:output-event>
     </types:processor-declaration>
   </types:enrichment>
+  <types:enrichment select="#ea3b51e6-23bd-44bf-9233-a5472a5853cd"/>
+  <types:enrichment select="#e09b64ab-f39a-4618-aefa-982c029bd1be"/>
 </types:mule>
