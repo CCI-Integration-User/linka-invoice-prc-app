@@ -149,10 +149,8 @@ output application/json
 					</ee:transform>
 					<flow-ref doc:name="Insert Invoice" doc:id="783c3da8-8b4e-4d40-870e-31d2de51ad40" name="db-insert-subflow" target="invoiceId"/>
 					<logger level="INFO" doc:name="Log Invoice Response" doc:id="82f46edc-9f56-4586-aa1a-308ede411c4a" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "Invoice Response",&#10;	"response": vars.invoiceId&#10;}]'/>
-					<choice doc:name="Choice" doc:id="5bed0dbf-8870-4256-bae3-63a78ea6aaca">
-						<when expression="#[vars.invoiceData.eval_status == 2]">
-							<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;vars.invoiceData.extra_data map ((item, index) -&gt; {&#10;    "lineItemTotal": item.precio_venta_unitario,&#10;    "quantity": item.cantidad,&#10;    "itemCode": item.code default "",&#10;    "description": item.descripcion,&#10;    "lineNumber": item.orden,&#10;    "priceWithTax": (item.precio_venta) , &#10;    "unitOfMeasure": item.unidad_de_medida,&#10;    "unitPrice": item.valor_unitario,&#10;   "invoiceID": vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number&#10;})]' doc:name="Invoice Detail Payload" doc:id="225545eb-fc2f-4379-99ce-99831297ca41" />
-							<foreach doc:name="Insert Invoice Detail and Tax" doc:id="d42271c2-15e8-4ac5-ae41-9ffba7d8e827" collection="#[payload]">
+					<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;vars.invoiceData.extra_data map ((item, index) -&gt; {&#10;    "lineItemTotal": item.precio_venta_unitario,&#10;    "quantity": item.cantidad,&#10;    "itemCode": item.code default "",&#10;    "description": item.descripcion,&#10;    "lineNumber": item.orden,&#10;    "priceWithTax": (item.precio_venta) , &#10;    "unitOfMeasure": item.unidad_de_medida,&#10;    "unitPrice": item.valor_unitario,&#10;   "invoiceID": vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number&#10;})]' doc:name="Invoice Detail Payload" doc:id="225545eb-fc2f-4379-99ce-99831297ca41" />
+					<foreach doc:name="Insert Invoice Detail and Tax" doc:id="d42271c2-15e8-4ac5-ae41-9ffba7d8e827" collection="#[payload]">
 						<ee:transform doc:name="var: dbOperation &amp; DB Payload" doc:id="e0e102f3-d5c7-46c8-85b8-52533e8c1508">
 							<ee:message>
 							</ee:message>
