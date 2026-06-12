@@ -30,7 +30,7 @@ output application/json
 output application/json
 ---
 {
-	"ruc": Mule::p('linka.ruc') ,
+	"ruc": Mule::p(payload ++ ".ruc") ,
 	"username": Mule::p("secure::" ++ payload ++ ".username"),
 	"password": Mule::p("secure::" ++ payload ++ ".password")
 }]]></ee:set-payload>
@@ -131,7 +131,6 @@ output application/json
     "DetractionAmount": vars.invoiceData.detraction_amount,
     "DetractionPercent": vars.invoiceData.detraction_percentage,
     "DueDate": vars.invoiceData.due_date,
-   // "InvoiceNumber": vars.invoiceData.id,
     "InvoiceType": vars.invoiceData.invoice_type,
     "InvoiceDate": vars.invoiceData.issue_date,
     "OperationTypeCode": vars.invoiceData.operation_type.code,

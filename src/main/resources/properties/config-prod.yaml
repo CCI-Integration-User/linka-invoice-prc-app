@@ -3,7 +3,10 @@
 linka:
    host: "https://linka-back.limberfy.com"
    basePath: "/api"
-   ruc: "20523833589"
+   csi:
+    ruc: "20523833589"
+   epc:
+    ruc: "20606395257"
 db:
   database: "Mule_Invoicing"
   host: "10.1.13.116"

@@ -77,7 +77,11 @@ output application/java
 output application/json
 ---
 {
-    "ruc"     : Mule::p('linka.ruc'),
+    "ruc"     : if(vars.index == 1)  
+    				Mule::p('linka.csi.ruc')
+    			else
+    				Mule::p('linka.csi.ruc')		
+    ,
     "username": if (vars.index == 1) 
                     Mule::p('secure::linka.csi.username') 
                 else 
