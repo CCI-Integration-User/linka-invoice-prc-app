@@ -1,7 +1,7 @@
 #Prod Configuration File
 
 linka:
-   host: "https://linka-back.limberfy.com"
+   host: "linka-back.limberfy.com"
    basePath: "/api"
    csi:
     ruc: "20523833589"
