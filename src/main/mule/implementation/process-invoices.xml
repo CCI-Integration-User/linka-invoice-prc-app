@@ -323,7 +323,7 @@ output application/json
 							<ee:set-variable variableName="query"><![CDATA[%dw 2.0
 output application/json
 ---
-"INSERT INTO InvoiceFile(fileData,name,fileID,fileType, uploadDate, invoiceId) VALUES(:fileData, :name, :fileID, :fileType, :uploadDate, :invoiceId)"]]></ee:set-variable>
+"INSERT INTO InvoiceFile(fileData,name,fileID,fileType, uploadDate, invoiceId,created_at) VALUES(:fileData, :name, :fileID, :fileType, :uploadDate, :invoiceId, :created_at)"]]></ee:set-variable>
 							<ee:set-variable variableName="dbOperation"><![CDATA[%dw 2.0
 output application/json
 ---
@@ -352,6 +352,7 @@ var invoiceFile = if (isXml)
   "fileID"     : payload.id,
   "fileType"   : payload."type",
   "uploadDate" : payload.upload_date,
+  "created_at" : vars.date,
   "invoiceId"  : vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number
 }]]></ee:set-variable>
 						</ee:variables>
