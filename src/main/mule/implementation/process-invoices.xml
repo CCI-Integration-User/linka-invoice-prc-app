@@ -352,7 +352,7 @@ var invoiceFile = if (isXml)
   "fileID"     : payload.id,
   "fileType"   : payload."type",
   "uploadDate" : payload.upload_date,
-  "created_at" : vars.date,
+  "created_at" :(now() >> "UTC") as LocalDateTime {format: "yyyy-MM-dd'T'HH:mm:ss"},
   "invoiceId"  : vars.invoiceId["generatedKeys"]["GENERATED_KEYS"] as Number
 }]]></ee:set-variable>
 						</ee:variables>
