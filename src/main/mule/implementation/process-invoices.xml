@@ -52,9 +52,12 @@ output application/json
 			</ee:variables>
 		</ee:transform>
 			<flow-ref doc:name="Get Access Token" doc:id="79fa1aad-fb67-483a-b3ed-5368b291670f" name="http-request-subflow" target="accessToken" />
-			<set-variable value="#[output application/json&#10;---&#10;{&#10;	&quot;method&quot;: &quot;GET&quot;,&#10;	&quot;host&quot;: Mule::p('linka.host'),&#10;	&quot;port&quot;: Mule::p('linka.port'),&#10;	&quot;path&quot;: Mule::p('linka.path.invoices'),&#10;	&quot;basePath&quot;: Mule::p('linka.basePath'),&#10;	&quot;queryParams&quot;: {&#10;		&quot;reception_date&quot;:  	vars.date&#10;	},&#10;	&quot;headers&quot;: {&#10;		&quot;Authorization&quot;: &quot;Bearer &quot; ++ vars.accessToken.access&#10;	}&#10;}]" doc:name="var : httpOperation" doc:id="5ca1c4a0-bea0-468f-9228-eb3d697b92be" variableName="httpOperation" />
-			<flow-ref doc:name="Fetch Invoices" doc:id="b607ed71-a329-4ad6-80f9-e061e5677e5e" name="http-request-subflow" />
-			<ee:transform doc:name="Filter Invoices exclude eval_status = 3" doc:id="4a09f57d-ea18-4f17-9706-6a0ca3de4762">
+			<try doc:name="Try" doc:id="3cb0902f-2ab0-4eb6-9275-346c7d530dc3" >
+				<foreach doc:name="For Each" doc:id="aac144a0-5da3-4660-9560-f9b05406d8d9" collection="#[1 to 1000]">
+					<set-variable value="#[output application/json&#10;---&#10;{&#10;	&quot;method&quot;: &quot;GET&quot;,&#10;	&quot;host&quot;: Mule::p('linka.host'),&#10;	&quot;port&quot;: Mule::p('linka.port'),&#10;	&quot;path&quot;: Mule::p('linka.path.invoices'),&#10;	&quot;basePath&quot;: Mule::p('linka.basePath'),&#10;	&quot;queryParams&quot;: {&#10;		&quot;reception_date&quot;:  	vars.date&#10;	},&#10;	&quot;headers&quot;: {&#10;		&quot;Authorization&quot;: &quot;Bearer &quot; ++ vars.accessToken.access&#10;	}&#10;}]" doc:name="var : httpOperation" doc:id="5ca1c4a0-bea0-468f-9228-eb3d697b92be" variableName="httpOperation" />
+					<flow-ref doc:name="Fetch Invoices" doc:id="b607ed71-a329-4ad6-80f9-e061e5677e5e" name="http-request-subflow" />
+					<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;&#10;if(isEmpty(payload.next)) true&#10;else false]" doc:name="var : flag" doc:id="8828e97b-2cd9-46d3-8cb4-c7bdf56848e3" variableName="flag"/>
+					<ee:transform doc:name="Filter Invoices exclude eval_status = 3" doc:id="4a09f57d-ea18-4f17-9706-6a0ca3de4762">
 					<ee:message>
 						<ee:set-payload><![CDATA[%dw 2.0
 output application/json
@@ -65,7 +68,7 @@ else
     []]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
-			<choice doc:name="Invoices Received?" doc:id="4befb5e7-361b-43c9-84ee-3486d6b4337d">
+					<choice doc:name="Invoices Received?" doc:id="4befb5e7-361b-43c9-84ee-3486d6b4337d">
 			<when expression="#[sizeOf(payload) &gt;= 1]">
 				<flow-ref doc:name="create-invoices-subflow" doc:id="6bb5c122-5253-499a-a384-d819a9bc35f2" name="create-invoices-subflow" />
 			</when>
@@ -73,6 +76,21 @@ else
 				<logger level="INFO" doc:name="No Invoices Received" doc:id="9049ede5-56e9-44cf-ae89-7c229c7c3a4a" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "No invoices received from linka"&#10;}]' />
 			</otherwise>
 		</choice>
+					<choice doc:name="Choice" doc:id="b1a71977-5dc7-411c-a667-ee0c7c37ca21" >
+						<when expression="#[vars.flag == true]">
+							<raise-error doc:name="Raise error" doc:id="d3d527de-ddb7-4258-8e68-ac1a53d58bad" type="PAGES:COMPLETED"/>
+						</when>
+						<otherwise >
+							<logger level="INFO" doc:name="Next Page" doc:id="a9d87fb9-776a-44ac-855d-fc8ed343abda" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "NEXT PAGE",&#10;	"counter":vars.counter&#10;}]' />
+						</otherwise>
+					</choice>
+				</foreach>
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="f3e8429d-0c92-4dd9-8ffe-aca058fb5188" type="ANY">
+						<logger level="INFO" doc:name="Error Log" doc:id="e81b22ed-6d7d-40fd-9c20-f2877bcdced2" message="#[error.detailedDescription]"/>
+					</on-error-continue>
+				</error-handler>
+			</try>
 		</foreach>
 		<os:store doc:name="Store timestamp" doc:id="f9e54b61-d60b-4687-b63b-68c91a0f303c" key="timestamp" objectStore="Object_store_timestamp">
 			<os:value><![CDATA[#[%dw 2.0
