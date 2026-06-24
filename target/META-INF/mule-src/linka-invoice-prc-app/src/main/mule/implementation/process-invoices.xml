@@ -49,6 +49,45 @@ output application/json
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Get Access Token" doc:id="79fa1aad-fb67-483a-b3ed-5368b291670f" name="http-request-subflow" target="accessToken"/>
+		<try doc:name="Try" doc:id="d249fa28-c5c9-4a6e-9807-9955a5fd0773">
+			<foreach doc:name="For Each" doc:id="174cb76f-9c28-4f08-939f-f2d533984ab4" collection="#[1 to 1000]">
+				<set-variable value="#[output application/json&#10;---&#10;{&#10;	&quot;method&quot;: &quot;GET&quot;,&#10;	&quot;host&quot;: Mule::p('linka.host'),&#10;	&quot;port&quot;: Mule::p('linka.port'),&#10;	&quot;path&quot;: Mule::p('linka.path.invoices'),&#10;	&quot;basePath&quot;: Mule::p('linka.basePath'),&#10;	&quot;queryParams&quot;: {&#10;		&quot;reception_date&quot;:  	vars.date&#10;	},&#10;	&quot;headers&quot;: {&#10;		&quot;Authorization&quot;: &quot;Bearer &quot; ++ vars.accessToken.access&#10;	}&#10;}]" doc:name="var : httpOperation" doc:id="537cdd84-bd18-4fe0-988e-33c3e4b90615" variableName="httpOperation" />
+				<flow-ref doc:name="Fetch Invoices" doc:id="915885e8-eeed-4953-86ca-e2377c05d44c" name="http-request-subflow" />
+				<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;&#10;if(isEmpty(payload.next)) true&#10;else false]" doc:name="var : flag" doc:id="2e7518cd-6405-46ea-8f41-7cde09ed0dfa" variableName="flag" />
+				<ee:transform doc:name="Filter Invoices exclude eval_status = 3" doc:id="5da5e8ff-3307-4612-8fb2-1f0bf4f510c9">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+if (!isEmpty(payload.results))
+    payload.results filter ($.eval_status != 3)
+else
+    []]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<choice doc:name="Invoices Received?" doc:id="708bb8f9-a48c-4c15-8a0e-51268f513eb1">
+					<when expression="#[sizeOf(payload) &gt;= 1]">
+						<flow-ref doc:name="create-invoices-subflow" doc:id="7db11069-6f0c-4e68-acbb-435acaa8c5fa" name="create-invoices-subflow" />
+					</when>
+					<otherwise>
+						<logger level="INFO" doc:name="No Invoices Received" doc:id="e90c62e9-52d5-49a8-8ee3-786573098217" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "No invoices received from linka"&#10;}]' />
+					</otherwise>
+				</choice>
+				<choice doc:name="Choice" doc:id="bcc1919e-c0c1-446d-af61-9ddcf26428ed">
+					<when expression="#[vars.flag == true]">
+						<raise-error doc:name="Raise error" doc:id="e625ca6a-0fa6-40d8-9928-4f98f58e8a9c" type="PAGES:COMPLETED" />
+					</when>
+					<otherwise>
+						<logger level="INFO" doc:name="Next Page" doc:id="9f9cf27e-eef5-4b3c-897b-38e69a4070cd" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "NEXT PAGE",&#10;	"counter":vars.counter&#10;}]' />
+					</otherwise>
+				</choice>
+			</foreach>
+			<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e82e5fda-5998-46a4-b0b3-6ff7bb309b2a" type="ANY">
+					<logger level="INFO" doc:name="Error Log" doc:id="0e2f85c1-dc56-4dc5-a02e-ee86b5c298cb" message="#[error.detailedDescription]" />
+				</on-error-continue>
+			</error-handler>
+		</try>
 		<set-variable value="#[output application/json&#10;---&#10;{&#10;	&quot;method&quot;: &quot;GET&quot;,&#10;	&quot;host&quot;: Mule::p('linka.host'),&#10;	&quot;port&quot;: Mule::p('linka.port'),&#10;	&quot;path&quot;: Mule::p('linka.path.invoices'),&#10;	&quot;basePath&quot;: Mule::p('linka.basePath'),&#10;	&quot;queryParams&quot;: {&#10;		//&quot;issue_date&quot;: &quot;24-07-2025&quot;,&#10;		&#10;		&quot;reception_date&quot;:  	vars.date,&#10;        //	&quot;eval_status&quot;: &quot;2&quot;&#10;         &#10;		&#10;	},&#10;	&quot;headers&quot;: {&#10;		&quot;Authorization&quot;: &quot;Bearer &quot; ++ vars.accessToken.access&#10;	}&#10;}]" doc:name="var : httpOperation" doc:id="5ca1c4a0-bea0-468f-9228-eb3d697b92be" variableName="httpOperation" />
 		<flow-ref doc:name="Fetch Invoices" doc:id="b607ed71-a329-4ad6-80f9-e061e5677e5e" name="http-request-subflow"/>
 		<ee:transform doc:name="Filter Invoices exclude eval_status = 3" doc:id="4a09f57d-ea18-4f17-9706-6a0ca3de4762">
