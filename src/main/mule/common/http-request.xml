@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="http-request-subflow" doc:id="beff0b2e-9c76-4661-990f-6878ccd3ec8a" >
+		<logger level="INFO" doc:name="Start Of Transaction" doc:id="d633b3c8-1a13-4ff1-9514-9ba3cb3f261d" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "Start of flow : " ++ flow.name,&#10;    message: flow.name ++" has Started",&#10;    correlationId: vars.correlationId&#10;}]'/>
+		<until-successful maxRetries="5" doc:name="Until Successful" doc:id="9032a935-7b59-4179-a647-52b98b7e77ba" >
+			<http:request method="#[vars.httpOperation.method]" doc:name="Request" doc:id="358ee82c-6234-4dd9-8e9b-35db20aede9e" path="#[vars.httpOperation.path]" config-ref="HTTP_Request_configuration">
+				<http:headers ><![CDATA[#[output json ---
+vars.httpOperation.headers default {}]]]></http:headers>
+				<http:uri-params ><![CDATA[#[output json ---
+vars.httpOperation.uriParams  default {}]]]></http:uri-params>
+				<http:query-params ><![CDATA[#[output json ---
+vars.httpOperation.queryParams default {}]]]></http:query-params>
+			</http:request>
+		</until-successful>
+		<logger level="INFO" doc:name="End Of Transaction" doc:id="6d46e585-8ffa-41e4-9526-46c300355f15" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "End of flow : " ++ flow.name,&#10;    message: flow.name ++" has Ended",&#10;    correlationId: vars.correlationId&#10;}]'/>
+	</sub-flow>
+</mule>

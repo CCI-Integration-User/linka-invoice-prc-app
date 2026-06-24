@@ -1,0 +1,21 @@
+#Common Property File
+
+http:
+  host: "0.0.0.0"
+  port: "8081"
+  protocol: "HTTP"
+    
+https:
+  host: "0.0.0.0"
+  port: "8082"
+  protocol: "HTTPS"
+  
+scheduler:
+  frequency: "30"
+  
+linka:
+  path:
+    invoices: "/bill/"
+    token: "/token/"
+    file: "/file/{fileId}/"
+  port: "443"

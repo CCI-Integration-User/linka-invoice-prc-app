@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<sub-flow name="reconciliation-delete-subflow" doc:id="9831f0d1-6935-4592-b5e1-dca17082e0ac" >
+		<logger level="INFO" doc:name="Start Of Transaction" doc:id="f3061920-c6e2-4f63-9d76-34c26c5f45c0" message='#[%dw 2.0 &#10;output application/json &#10;--- &#10;{ &#10;	correlationId: vars.correlationId, &#10;	message: " delete started"&#10;}]' />
+		<choice doc:name="Choice" doc:id="d79272d9-8251-45f8-9f72-ae2f22d2d298" >
+			<when expression="#[vars.currentStagingRow.status ~= 2]">
+				<ee:transform doc:name="var: dbOperation &amp; DB Payload" doc:id="8780c755-e65c-47de-ae7f-8fcafcda39ed">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="query"><![CDATA[%dw 2.0
+output application/java
+---
+"DELETE t FROM Tax t INNER JOIN InvoiceDetail d ON t.invoiceDetailID = d.id WHERE d.invoiceID = :invoiceId"]]></ee:set-variable>
+				<ee:set-variable variableName="dbPayload"><![CDATA[%dw 2.0
+output application/json
+---
+{ "invoiceId": vars.currentStagingRow.id }]]></ee:set-variable>
+				<ee:set-variable variableName="dbOperation"><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "host":     Mule::p('db.host'),
+    "port":     Mule::p('db.port'),
+    "username": Mule::p('secure::db.username'),
+    "password": Mule::p('secure::db.password'),
+    "database": Mule::p('db.database')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<flow-ref doc:name="Delete Tax" doc:id="1f7e9877-b34b-4278-8063-c99a567e438e" name="db-delete-subflow" />
+				<logger level="INFO" doc:name="Tax Deleted" doc:id="7192b667-fe9c-4fc3-9bcd-28a290d99240" message='#[%dw 2.0 &#10;output application/json &#10;--- &#10;{&#10;	correlationId: vars.correlationId, &#10;	message: "Tax rows deleted"&#10;}]' />
+				<ee:transform doc:name="var: dbOperation &amp; DB Payload" doc:id="60a7169f-06f5-4789-877f-063c797d538a">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="query"><![CDATA[%dw 2.0
+output application/java
+---
+"DELETE FROM InvoiceDetail WHERE invoiceID = :invoiceId"]]></ee:set-variable>
+				<ee:set-variable variableName="dbPayload"><![CDATA[%dw 2.0
+output application/json
+---
+{ "invoiceId": vars.currentStagingRow.id }]]></ee:set-variable>
+				<ee:set-variable variableName="dbOperation"><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "host":     Mule::p('db.host'),
+    "port":     Mule::p('db.port'),
+    "username": Mule::p('secure::db.username'),
+    "password": Mule::p('secure::db.password'),
+    "database": Mule::p('db.database')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<flow-ref doc:name="Delete InvoiceDetail" doc:id="8e7d7e18-0788-4958-a3c9-830495df203c" name="db-delete-subflow" />
+				<logger level="INFO" doc:name="InvoiceDetail Deleted" doc:id="6c0bd958-1f03-475b-898d-51af7ff624f8" message='#[%dw 2.0 &#10;output application/json &#10;--- &#10;{ &#10;	correlationId: vars.correlationId, &#10;	message: "InvoiceDetail rows deleted"&#10;}]' />
+				<ee:transform doc:name="var: dbOperation &amp; DB Payload" doc:id="52c5fd96-c230-47fe-abfc-6d7a82168929">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="query"><![CDATA[%dw 2.0
+output application/java
+---
+"DELETE FROM InvoiceFile WHERE invoiceId = :invoiceId"]]></ee:set-variable>
+				<ee:set-variable variableName="dbPayload"><![CDATA[%dw 2.0
+output application/json
+---
+{ "invoiceId": vars.currentStagingRow.id }]]></ee:set-variable>
+				<ee:set-variable variableName="dbOperation"><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "host":     Mule::p('db.host'),
+    "port":     Mule::p('db.port'),
+    "username": Mule::p('secure::db.username'),
+    "password": Mule::p('secure::db.password'),
+    "database": Mule::p('db.database')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<flow-ref doc:name="Delete InvoiceFile" doc:id="a3c31966-ff03-4315-ba82-33a9324e1abb" name="db-delete-subflow" />
+				<logger level="INFO" doc:name="InvoiceFile Deleted" doc:id="c72109ad-3cd6-4f8a-bb49-4ea16ac61b16" message='#[%dw 2.0 &#10;output application/json &#10;--- &#10;{ &#10;	correlationId: vars.correlationId, &#10;	message: "InvoiceFile rows deleted"&#10;}]' />
+				<ee:transform doc:name="var: dbOperation &amp; DB Payload" doc:id="fd00bf78-846a-41a8-8f0d-bfd202ed81c1">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="query"><![CDATA[%dw 2.0
+output application/java
+---
+"DELETE FROM InvoiceRetention WHERE invoiceId = :invoiceId"]]></ee:set-variable>
+				<ee:set-variable variableName="dbPayload"><![CDATA[%dw 2.0
+output application/json
+---
+{ "invoiceId": vars.currentStagingRow.id }]]></ee:set-variable>
+				<ee:set-variable variableName="dbOperation"><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "host":     Mule::p('db.host'),
+    "port":     Mule::p('db.port'),
+    "username": Mule::p('secure::db.username'),
+    "password": Mule::p('secure::db.password'),
+    "database": Mule::p('db.database')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<flow-ref doc:name="Delete Retention" doc:id="99c9ff7d-4a7c-4b76-9f10-c2ce028db81f" name="db-delete-subflow" />
+				<logger level="INFO" doc:name="Retention Deleted" doc:id="a05f9638-067c-45cb-b0ef-b500f9e34622" message='#[%dw 2.0 &#10;output application/json &#10;--- &#10;{ &#10;	correlationId: vars.correlationId, &#10;	message: "InvoiceRetention rows deleted"&#10;}]' />
+				<ee:transform doc:name="var: dbOperation &amp; DB Payload" doc:id="cf15dff1-2263-4abc-8f80-12a56da1a411">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="query"><![CDATA[%dw 2.0
+output application/java
+---
+"DELETE FROM InvoicePaymentPlan WHERE invoiceId = :invoiceId"]]></ee:set-variable>
+				<ee:set-variable variableName="dbPayload"><![CDATA[%dw 2.0
+output application/json
+---
+{ "invoiceId": vars.currentStagingRow.id }]]></ee:set-variable>
+				<ee:set-variable variableName="dbOperation"><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "host":     Mule::p('db.host'),
+    "port":     Mule::p('db.port'),
+    "username": Mule::p('secure::db.username'),
+    "password": Mule::p('secure::db.password'),
+    "database": Mule::p('db.database')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<flow-ref doc:name="Delete PaymentPlan" doc:id="92511639-8eb9-43ec-8a91-22fa8e686a48" name="db-delete-subflow" />
+				<logger level="INFO" doc:name="PaymentPlan Deleted" doc:id="6fbaede2-4e94-4f35-9561-86a95c0aa88e" message='#[%dw 2.0 &#10;output application/json &#10;--- &#10;{&#10;	correlationId: vars.correlationId,&#10;	 message: "InvoicePaymentPlan rows deleted"&#10;}]' />
+				<ee:transform doc:name="var: dbOperation &amp; DB Payload" doc:id="066daf09-ea99-4103-86ad-08aedd0eb718">
+			<ee:message />
+			<ee:variables>
+				<ee:set-variable variableName="query"><![CDATA[%dw 2.0
+output application/java
+---
+"DELETE FROM DeliveryNote WHERE invoiceId = :invoiceId"]]></ee:set-variable>
+				<ee:set-variable variableName="dbPayload"><![CDATA[%dw 2.0
+output application/json
+---
+{ "invoiceId": vars.currentStagingRow.id }]]></ee:set-variable>
+				<ee:set-variable variableName="dbOperation"><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "host":     Mule::p('db.host'),
+    "port":     Mule::p('db.port'),
+    "username": Mule::p('secure::db.username'),
+    "password": Mule::p('secure::db.password'),
+    "database": Mule::p('db.database')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<flow-ref doc:name="Delete DeliveryNote" doc:id="f034b6cd-6077-40c8-a07f-0278dc3f10b5" name="db-delete-subflow" />
+				<logger level="INFO" doc:name="DeliveryNote Deleted" doc:id="2a2df8e3-9cd1-4a95-ac56-b0d53fd7f8d0" message='#[%dw 2.0 &#10;output application/json&#10; --- &#10; {&#10; 	correlationId: vars.correlationId, &#10; 	message: "DeliveryNote rows deleted"&#10; }]' />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="eval_status=0 or 1 or 4" doc:id="ce073f08-f2ad-4506-b54f-f6942388e66a" message='#[%dw 2.0 &#10;output application/json &#10;--- &#10;{ &#10;	correlationId: vars.correlationId, &#10;	message: "Need to delete only invoice table data"&#10;}]' />
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="var: dbOperation &amp; DB Payload" doc:id="e4bd997f-dc97-4b0c-8619-1207ffeb7800" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+output application/java
+---
+"DELETE FROM Invoice WHERE id = :invoiceId"]]></ee:set-variable>
+				<ee:set-variable variableName="dbPayload" ><![CDATA[%dw 2.0
+output application/json
+---
+{ "invoiceId": vars.currentStagingRow.id }]]></ee:set-variable>
+				<ee:set-variable variableName="dbOperation" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "host":     Mule::p('db.host'),
+    "port":     Mule::p('db.port'),
+    "username": Mule::p('secure::db.username'),
+    "password": Mule::p('secure::db.password'),
+    "database": Mule::p('db.database')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Delete Invoice" doc:id="c05c2d94-20e5-4ed5-bbb8-3206f3c070f2" name="db-delete-subflow" />
+		<logger level="INFO" doc:name="Invoice Deleted" doc:id="366b34cf-0997-41f6-8c80-edba594d0a96" message='#[%dw 2.0 &#10;output application/json &#10;--- &#10;{ &#10;	correlationId: vars.correlationId, &#10;	message: "Invoice  deleted"&#10;}]' />
+		<logger level="INFO" doc:name="End Of Transaction" doc:id="b3d7b438-9677-4a16-8156-6b45cc4394f8" message='#[%dw 2.0 &#10;output application/json &#10;--- &#10;{ &#10;	correlationId: vars.correlationId, &#10;	message: " Delete complete"&#10;&#10;}]' />
+	</sub-flow>
+</mule>

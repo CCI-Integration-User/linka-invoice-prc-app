@@ -1,0 +1,56 @@
+{
+  "configs": [
+    "implementation/process-invoices.xml",
+    "common/global-configs.xml",
+    "implementation/reconciliation-cancelled-invoices.xml",
+    "implementation/reconciliation-approve-invoices.xml",
+    "common/db-operations.xml",
+    "common/error-handler.xml",
+    "implementation/reconcile-invoices.xml",
+    "common/http-request.xml",
+    "linka-invoice-prc-app.xml"
+  ],
+  "secureProperties": [
+    "mule.key",
+    "anypoint.platform.client_id",
+    "anypoint.platform.client_secret"
+  ],
+  "supportedJavaVersions": [],
+  "redeploymentEnabled": true,
+  "name": "a857f6f9-4077-49a7-a0b3-a1cbffcd2377:linka-invoice-prc-app:1.0.0",
+  "minMuleVersion": "4.9.0",
+  "requiredProduct": "MULE_EE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedPackages": [],
+      "exportedResources": [
+        "application-types.xml",
+        "common/db-operations.xml",
+        "common/error-handler.xml",
+        "common/global-configs.xml",
+        "common/http-request.xml",
+        "implementation/process-invoices.xml",
+        "implementation/reconcile-invoices.xml",
+        "implementation/reconciliation-approve-invoices.xml",
+        "implementation/reconciliation-cancelled-invoices.xml",
+        "linka-invoice-prc-app.xml",
+        "log4j2.xml",
+        "properties/common/common.yaml",
+        "properties/config-dev.yaml",
+        "properties/config-local.yaml",
+        "properties/config-prod.yaml",
+        "properties/secure/config-dev-secure.yaml",
+        "properties/secure/config-local-secure.yaml",
+        "properties/secure/config-prod-secure.yaml"
+      ]
+    }
+  },
+  "bundleDescriptorLoader": {
+    "id": "mule",
+    "attributes": {}
+  },
+  "javaSpecificationVersions": [
+    "17"
+  ]
+}
