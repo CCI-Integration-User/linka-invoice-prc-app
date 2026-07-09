@@ -38,10 +38,14 @@ output application/json
     GrossAmount = :GrossAmount,
     customerAddressId = :customerAddressId,
     sellToVatId = :sellToVatId,
-    source = :source
+    updatedOn = :updatedOn,
+    processFlow = :processFlow,
+    source = :source,
+    payload_id = :payload_id
  WHERE InvoiceNumber = :InvoiceNumber"]]></ee:set-variable>
 				<ee:set-variable variableName="dbPayload"><![CDATA[%dw 2.0
 output application/json
+var utcNow = (now() >> "UTC") as String {format: "yyyy-MM-dd'T'HH:mm:ss.SSS"}
 ---
  {
     "Currency": vars.invoiceData.currency.code,
@@ -60,6 +64,9 @@ output application/json
     "GrossAmount": vars.invoiceData.total,
     "customerAddressId": vars.invoiceData.bbss_code,
 	"sellToVatId": vars.invoiceData.xml_supplier_ruc,
+	"payload_id":vars.invoiceData.id,
+	 "updatedOn": utcNow,
+	 "processFlow":vars.invoiceData.order_detail.nec_number,
     "source": if(vars.index==1) "LINKA-CSI" else "LINKA-EPC"
 }]]></ee:set-variable>
 			</ee:variables>

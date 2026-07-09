@@ -54,7 +54,7 @@ output application/json
 			<flow-ref doc:name="Get Access Token" doc:id="79fa1aad-fb67-483a-b3ed-5368b291670f" name="http-request-subflow" target="accessToken" />
 			<try doc:name="Try" doc:id="3cb0902f-2ab0-4eb6-9275-346c7d530dc3" >
 				<foreach doc:name="For Each" doc:id="aac144a0-5da3-4660-9560-f9b05406d8d9" collection="#[1 to 1000]">
-					<set-variable value="#[output application/json&#10;---&#10;{&#10;	&quot;method&quot;: &quot;GET&quot;,&#10;	&quot;host&quot;: Mule::p('linka.host'),&#10;	&quot;port&quot;: Mule::p('linka.port'),&#10;	&quot;path&quot;: Mule::p('linka.path.invoices'),&#10;	&quot;basePath&quot;: Mule::p('linka.basePath'),&#10;	&quot;queryParams&quot;: {&#10;		&quot;reception_date&quot;:  	vars.date&#10;	},&#10;	&quot;headers&quot;: {&#10;		&quot;Authorization&quot;: &quot;Bearer &quot; ++ vars.accessToken.access&#10;	}&#10;}]" doc:name="var : httpOperation" doc:id="5ca1c4a0-bea0-468f-9228-eb3d697b92be" variableName="httpOperation" />
+					<set-variable value="#[output application/json&#10;---&#10;{&#10;	&quot;method&quot;: &quot;GET&quot;,&#10;	&quot;host&quot;: Mule::p('linka.host'),&#10;	&quot;port&quot;: Mule::p('linka.port'),&#10;	&quot;path&quot;: Mule::p('linka.path.invoices'),&#10;	&quot;basePath&quot;: Mule::p('linka.basePath'),&#10;	&quot;queryParams&quot;: {&#10;		&quot;reception_date&quot;:  	vars.date,&#10;		&quot;page&quot;:vars.counter&#10;	},&#10;	&quot;headers&quot;: {&#10;		&quot;Authorization&quot;: &quot;Bearer &quot; ++ vars.accessToken.access&#10;	}&#10;}]" doc:name="var : httpOperation" doc:id="5ca1c4a0-bea0-468f-9228-eb3d697b92be" variableName="httpOperation" />
 					<flow-ref doc:name="Fetch Invoices" doc:id="b607ed71-a329-4ad6-80f9-e061e5677e5e" name="http-request-subflow" />
 					<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;&#10;if(isEmpty(payload.next)) true&#10;else false]" doc:name="var : flag" doc:id="8828e97b-2cd9-46d3-8cb4-c7bdf56848e3" variableName="flag"/>
 					<ee:transform doc:name="Filter Invoices exclude eval_status = 3" doc:id="4a09f57d-ea18-4f17-9706-6a0ca3de4762">
@@ -88,6 +88,7 @@ else
 				<error-handler >
 					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="f3e8429d-0c92-4dd9-8ffe-aca058fb5188" type="ANY">
 						<logger level="INFO" doc:name="Error Log" doc:id="e81b22ed-6d7d-40fd-9c20-f2877bcdced2" message="#[error.detailedDescription]"/>
+						<logger level="INFO" doc:name="No Next Page" doc:id="bf6e600c-c089-43f9-a0a8-5a23457f2f26" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": " NO NEXT PAGE",&#10;	"counter":vars.counter&#10;}]' />
 					</on-error-continue>
 				</error-handler>
 			</try>
@@ -140,9 +141,10 @@ output application/json
 							<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
 output application/json
 ---
-"INSERT INTO Invoice(Currency,DetractionAmount,DetractionPercent,DueDate,InvoiceType,InvoiceDate,OperationTypeCode,PaymentTerms,PurchaseOrderNo,ReceptionDate,InvoiceNumber,GrossAmount,source,status,customerAddressId,sellToVatId) VALUES(:Currency,:DetractionAmount,:DetractionPercent,:DueDate,:InvoiceType,:InvoiceDate,:OperationTypeCode,:PaymentTerms,:PurchaseOrderNo,:ReceptionDate,:InvoiceNumber,:GrossAmount,:source,:status,:customerAddressId,:sellToVatId)"]]></ee:set-variable>
+"INSERT INTO Invoice(Currency,DetractionAmount,DetractionPercent,DueDate,InvoiceType,InvoiceDate,OperationTypeCode,PaymentTerms,PurchaseOrderNo,ReceptionDate,InvoiceNumber,GrossAmount,source,status,customerAddressId,sellToVatId,processFlow,updatedOn,createdOn,payload_id) VALUES(:Currency,:DetractionAmount,:DetractionPercent,:DueDate,:InvoiceType,:InvoiceDate,:OperationTypeCode,:PaymentTerms,:PurchaseOrderNo,:ReceptionDate,:InvoiceNumber,:GrossAmount,:source,:status,:customerAddressId,:sellToVatId,:processFlow,:updatedOn,:createdOn,:payload_id)"]]></ee:set-variable>
 							<ee:set-variable variableName="dbPayload" ><![CDATA[%dw 2.0
 output application/json
+var utcNow = (now() >> "UTC") as String {format: "yyyy-MM-dd'T'HH:mm:ss.SSS"}
 ---
  {
     "Currency": vars.invoiceData.currency.code,
@@ -160,6 +162,10 @@ output application/json
     "GrossAmount": vars.invoiceData.total,
     "customerAddressId": vars.invoiceData.bbss_code,
 	"sellToVatId": vars.invoiceData.xml_supplier_ruc,
+	"createdOn": utcNow,
+    "updatedOn": utcNow,
+    "payload_id":vars.invoiceData.id,
+    "processFlow":vars.invoiceData.order_detail.nec_number,
     "source": if(vars.index==1) "LINKA-CSI" else "LINKA-EPC"
 }]]></ee:set-variable>
 						</ee:variables>
