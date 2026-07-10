@@ -24,7 +24,7 @@ output application/json
 				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
 output application/json
 ---
-"SELECT id, InvoiceNumber, ReceptionDate, PurchaseOrderNo, status, source FROM Invoice WHERE status IS NOT NULL"]]></ee:set-variable>
+"SELECT id, InvoiceNumber, ReceptionDate, PurchaseOrderNo, status, source FROM Invoice WHERE status IS NOT NULL AND source IN ( 'LINKA-CSI','LINKA-EPC')"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Select Staging Invoices" doc:id="348b9b62-c0da-4fca-abed-3af56ce2856d" name="db-select-subflow" target="stagingInvoices" />
