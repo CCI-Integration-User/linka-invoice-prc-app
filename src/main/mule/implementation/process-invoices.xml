@@ -21,22 +21,19 @@ output application/json
 ---
 [] as Array]]]></os:default-value>
 		</os:retrieve>
-		<set-variable value='#[%dw 2.0&#10;output application/json&#10;---&#10;[&#10;    "linka.csi",&#10;    "linka.epc"&#10;]]' doc:name="var : credentials" doc:id="0cdabb00-19f6-4092-b986-b771e04ec10b" variableName="credentials"/>
-		<foreach doc:name="For Each" doc:id="a316d322-aa55-44d0-a014-5d9082162746" collection="#[vars.credentials]">
-			<set-variable value="#[vars.counter]" doc:name="var : index" doc:id="5f41b3d6-cbbf-4fb2-8faa-459c4a6d7230" variableName="index"/>
-			<ee:transform doc:name="var: httpOperation &amp; Request Payload" doc:id="691dcaff-7ff9-4346-aa70-bf4197440d81">
-			<ee:message>
-				<ee:set-payload><![CDATA[%dw 2.0
+		<ee:transform doc:name="var: httpOperation &amp; Request Payload" doc:id="691dcaff-7ff9-4346-aa70-bf4197440d81" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
 {
-	"ruc": Mule::p('linka.ruc') ,
-	"username": Mule::p("secure::" ++ payload ++ ".username"),
-	"password": Mule::p("secure::" ++ payload ++ ".password")
+	"ruc": Mule::p('linka.ruc'),
+	"username": Mule::p('secure::linka.username'),
+	"password": Mule::p('secure::linka.password') 
 }]]></ee:set-payload>
 			</ee:message>
-			<ee:variables>
-				<ee:set-variable variableName="httpOperation"><![CDATA[output application/json
+			<ee:variables >
+				<ee:set-variable variableName="httpOperation" ><![CDATA[output application/json
 ---
 {
 	"method": "POST",
@@ -45,16 +42,19 @@ output application/json
 	"path": Mule::p('linka.path.token'),
 	"basePath": Mule::p('linka.basePath'),
 	"queryParams": {
-		"key":Mule::p("secure::" ++ payload ++ ".username"),
-		"value": Mule::p("secure::" ++ payload ++ ".password")
+		"key": Mule::p('secure::linka.username'),
+		"value": Mule::p('secure::linka.password')
 	}
 }]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-			<flow-ref doc:name="Get Access Token" doc:id="79fa1aad-fb67-483a-b3ed-5368b291670f" name="http-request-subflow" target="accessToken" />
-			<set-variable value="#[output application/json&#10;---&#10;{&#10;	&quot;method&quot;: &quot;GET&quot;,&#10;	&quot;host&quot;: Mule::p('linka.host'),&#10;	&quot;port&quot;: Mule::p('linka.port'),&#10;	&quot;path&quot;: Mule::p('linka.path.invoices'),&#10;	&quot;basePath&quot;: Mule::p('linka.basePath'),&#10;	&quot;queryParams&quot;: {&#10;		&quot;reception_date&quot;:  	vars.date&#10;	},&#10;	&quot;headers&quot;: {&#10;		&quot;Authorization&quot;: &quot;Bearer &quot; ++ vars.accessToken.access&#10;	}&#10;}]" doc:name="var : httpOperation" doc:id="5ca1c4a0-bea0-468f-9228-eb3d697b92be" variableName="httpOperation" />
-			<flow-ref doc:name="Fetch Invoices" doc:id="b607ed71-a329-4ad6-80f9-e061e5677e5e" name="http-request-subflow" />
-			<ee:transform doc:name="Filter Invoices exclude eval_status = 3" doc:id="4a09f57d-ea18-4f17-9706-6a0ca3de4762">
+		<flow-ref doc:name="Get Access Token" doc:id="79fa1aad-fb67-483a-b3ed-5368b291670f" name="http-request-subflow" target="accessToken"/>
+		<try doc:name="Try" doc:id="d249fa28-c5c9-4a6e-9807-9955a5fd0773">
+			<foreach doc:name="For Each" doc:id="174cb76f-9c28-4f08-939f-f2d533984ab4" collection="#[1 to 1000]">
+				<set-variable value="#[output application/json&#10;---&#10;{&#10;	&quot;method&quot;: &quot;GET&quot;,&#10;	&quot;host&quot;: Mule::p('linka.host'),&#10;	&quot;port&quot;: Mule::p('linka.port'),&#10;	&quot;path&quot;: Mule::p('linka.path.invoices'),&#10;	&quot;basePath&quot;: Mule::p('linka.basePath'),&#10;	&quot;queryParams&quot;: {&#10;		&quot;reception_date&quot;:  	vars.date,&#10;		&quot;page&quot;:vars.counter&#10;	},&#10;	&quot;headers&quot;: {&#10;		&quot;Authorization&quot;: &quot;Bearer &quot; ++ vars.accessToken.access&#10;	}&#10;}]" doc:name="var : httpOperation" doc:id="537cdd84-bd18-4fe0-988e-33c3e4b90615" variableName="httpOperation" />
+				<flow-ref doc:name="Fetch Invoices" doc:id="915885e8-eeed-4953-86ca-e2377c05d44c" name="http-request-subflow" />
+				<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;&#10;if(isEmpty(payload.next)) true&#10;else false]" doc:name="var : flag" doc:id="2e7518cd-6405-46ea-8f41-7cde09ed0dfa" variableName="flag" />
+				<ee:transform doc:name="Filter Invoices exclude eval_status = 3" doc:id="5da5e8ff-3307-4612-8fb2-1f0bf4f510c9">
 					<ee:message>
 						<ee:set-payload><![CDATA[%dw 2.0
 output application/json
@@ -65,15 +65,30 @@ else
     []]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
-			<choice doc:name="Invoices Received?" doc:id="4befb5e7-361b-43c9-84ee-3486d6b4337d">
-			<when expression="#[sizeOf(payload) &gt;= 1]">
-				<flow-ref doc:name="create-invoices-subflow" doc:id="6bb5c122-5253-499a-a384-d819a9bc35f2" name="create-invoices-subflow" />
-			</when>
-			<otherwise>
-				<logger level="INFO" doc:name="No Invoices Received" doc:id="9049ede5-56e9-44cf-ae89-7c229c7c3a4a" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "No invoices received from linka"&#10;}]' />
-			</otherwise>
-		</choice>
-		</foreach>
+				<choice doc:name="Invoices Received?" doc:id="708bb8f9-a48c-4c15-8a0e-51268f513eb1">
+					<when expression="#[sizeOf(payload) &gt;= 1]">
+						<flow-ref doc:name="create-invoices-subflow" doc:id="7db11069-6f0c-4e68-acbb-435acaa8c5fa" name="create-invoices-subflow" />
+					</when>
+					<otherwise>
+						<logger level="INFO" doc:name="No Invoices Received" doc:id="e90c62e9-52d5-49a8-8ee3-786573098217" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "No invoices received from linka"&#10;}]' />
+					</otherwise>
+				</choice>
+				<choice doc:name="Choice" doc:id="bcc1919e-c0c1-446d-af61-9ddcf26428ed">
+					<when expression="#[vars.flag == true]">
+						<raise-error doc:name="Raise error" doc:id="e625ca6a-0fa6-40d8-9928-4f98f58e8a9c" type="PAGES:COMPLETED" />
+					</when>
+					<otherwise>
+						<logger level="INFO" doc:name="Next Page" doc:id="9f9cf27e-eef5-4b3c-897b-38e69a4070cd" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "NEXT PAGE",&#10;	"counter":vars.counter&#10;}]' />
+					</otherwise>
+				</choice>
+			</foreach>
+			<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e82e5fda-5998-46a4-b0b3-6ff7bb309b2a" type="ANY">
+					<logger level="INFO" doc:name="Error Log" doc:id="0e2f85c1-dc56-4dc5-a02e-ee86b5c298cb" message="#[error.detailedDescription]" />
+					<logger level="INFO" doc:name="No Next Page" doc:id="7fc294e0-c4ee-40d2-a650-09b72302c65b" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": " NO NEXT PAGE",&#10;	"counter":vars.counter&#10;}]' />
+				</on-error-continue>
+			</error-handler>
+		</try>
 		<os:store doc:name="Store timestamp" doc:id="f9e54b61-d60b-4687-b63b-68c91a0f303c" key="timestamp" objectStore="Object_store_timestamp">
 			<os:value><![CDATA[#[%dw 2.0
 output application/json
@@ -84,7 +99,7 @@ now() as String{format: "dd-MM-yyyy"}]]]></os:value>
 	</sub-flow>
 	<sub-flow name="create-invoices-subflow" doc:id="68c0bef7-5e6d-43a2-a686-335cc4282772" >
 		<logger level="INFO" doc:name="Start Of Transaction" doc:id="a7af4498-46f8-4c55-83fe-56fe2a95026d" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "Start of flow : " ++ flow.name,&#10;    message: flow.name ++" has Started",&#10;    correlationId: vars.correlationId&#10;}]' />
-		<foreach doc:name="Process Invoices" doc:id="e7b94089-477b-4505-afda-e96b5660dcd2" collection="#[payload]">
+		<foreach doc:name="Process Invoices" doc:id="e7b94089-477b-4505-afda-e96b5660dcd2" collection="#[//payload.results&#10;payload]">
 			<ee:transform doc:name="var: isAlreadyProcessed &amp; InvoiceData" doc:id="ca9b0e92-c7f4-4e45-a4b3-242d7696a004">
 				<ee:message />
 				<ee:variables>
@@ -122,9 +137,10 @@ output application/json
 							<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
 output application/json
 ---
-"INSERT INTO Invoice(Currency,DetractionAmount,DetractionPercent,DueDate,InvoiceType,InvoiceDate,OperationTypeCode,PaymentTerms,PurchaseOrderNo,ReceptionDate,InvoiceNumber,GrossAmount,source,status,customerAddressId,sellToVatId) VALUES(:Currency,:DetractionAmount,:DetractionPercent,:DueDate,:InvoiceType,:InvoiceDate,:OperationTypeCode,:PaymentTerms,:PurchaseOrderNo,:ReceptionDate,:InvoiceNumber,:GrossAmount,:source,:status,:customerAddressId,:sellToVatId)"]]></ee:set-variable>
+"INSERT INTO Invoice(Currency,DetractionAmount,DetractionPercent,DueDate,InvoiceType,InvoiceDate,OperationTypeCode,PaymentTerms,PurchaseOrderNo,ReceptionDate,InvoiceNumber,GrossAmount,source,status,customerAddressId,sellToVatId,processFlow,updatedOn,createdOn,payload_id) VALUES(:Currency,:DetractionAmount,:DetractionPercent,:DueDate,:InvoiceType,:InvoiceDate,:OperationTypeCode,:PaymentTerms,:PurchaseOrderNo,:ReceptionDate,:InvoiceNumber,:GrossAmount,:source,:status,:customerAddressId,:sellToVatId,:processFlow,:updatedOn,:createdOn,:payload_id)"]]></ee:set-variable>
 							<ee:set-variable variableName="dbPayload" ><![CDATA[%dw 2.0
 output application/json
+var utcNow = (now() >> "UTC") as String {format: "yyyy-MM-dd'T'HH:mm:ss.SSS"}
 ---
  {
     "Currency": vars.invoiceData.currency.code,
@@ -143,7 +159,11 @@ output application/json
     "GrossAmount": vars.invoiceData.total,
     "customerAddressId": vars.invoiceData.bbss_code,
 	"sellToVatId": vars.invoiceData.xml_supplier_ruc,
-    "source": if(vars.index==1) "LINKA-CSI" else "LINKA-EPC"
+	"processFlow":vars.invoiceData.order_detail.nec_number,
+	"createdOn": utcNow,
+    "updatedOn": utcNow,
+    "payload_id":vars.invoiceData.id,
+    "source": "Linka-CSI"
 }]]></ee:set-variable>
 						</ee:variables>
 					</ee:transform>

@@ -1,13 +1,1 @@
 #Prod Secure Configuration File
-
-linka:
-  csi:
-    username: "![1faeYvypGQuzePB+36qqGA==]"
-    password: "![VDXz3qdZ6x55/RtMNSc+UQ==]"
-  epc:
-    username: "![W7hb/r+x9oJkwFiRDxKuCA==]"
-    password: "![Eb+qBPvuCE4L1xs33N6Jjw==]"
-    
-db:
-  user: "![El70iS1LU0/IGDgsO/vhiQ==]"
-  password: "![45gXCodKKeh5yTFKAI+lKQ==]"

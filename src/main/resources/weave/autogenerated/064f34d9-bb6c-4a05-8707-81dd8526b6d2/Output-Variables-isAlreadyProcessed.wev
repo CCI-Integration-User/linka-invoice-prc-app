@@ -1,4 +1,0 @@
-%dw 2.0
-
-type auto_064f34d9_bb6c_4a05_8707_81dd8526b6d2_Output_Variables_isAlreadyProcessed = Boolean
-

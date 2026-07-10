@@ -24,8 +24,9 @@ output application/json
 				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
 output application/json
 ---
-"SELECT id, InvoiceNumber, ReceptionDate, PurchaseOrderNo, status ,source 
- FROM Invoice"]]></ee:set-variable>
+"SELECT id, InvoiceNumber, ReceptionDate, PurchaseOrderNo, status
+ FROM Invoice
+ WHERE source = 'Linka-CSI'"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="Select Staging Invoices" doc:id="348b9b62-c0da-4fca-abed-3af56ce2856d" name="db-select-subflow" target="stagingInvoices" />
@@ -44,32 +45,13 @@ output application/json
 		<logger level="INFO" doc:name="Start Processing" doc:id="3e65ba47-1b75-4f6e-8df0-7b96f2327de6" message='#[%dw 2.0 &#10;output application/json &#10;---&#10; { &#10; 	correlationId: vars.correlationId,&#10; 	flow: "Start of flow: " ++ flow.name&#10; }]' />
 		<foreach doc:name="For Each Staging Invoice" doc:id="7b4f6fd0-b227-479e-a292-abfeab3d6892" collection="#[vars.stagingInvoices]" >
 			<set-variable value="#[payload]" doc:name="var: currentStagingRow" doc:id="3ab9ad3e-297a-4ec5-8f36-7019775f5454" variableName="currentStagingRow" />
-			<choice doc:name="Choice" doc:id="0e20c565-0417-4353-bceb-c3fe129d020f" >
-				<when expression="#[!isEmpty(vars.currentStagingRow.source)]">
-					<ee:transform doc:name="Transform Message" doc:id="b38e2083-8cdb-4a7f-a9d8-306344a20669">
-						<ee:message>
-						</ee:message>
-						<ee:variables >
-							<ee:set-variable variableName="index" ><![CDATA[%dw 2.0
-output application/json
----
-if(vars.currentStagingRow.source == "LINKA-CSI") 1 else 2]]></ee:set-variable>
-							<ee:set-variable variableName="credentials" ><![CDATA[%dw 2.0
-output application/json
----
-[
-    "linka.csi",
-    "linka.epc"
-]]]></ee:set-variable>
-						</ee:variables>
-					</ee:transform>
-					<os:retrieve doc:name="Access Token" doc:id="3fc92210-b287-4aab-95bd-cfe80606d5b7" key="#['accesstoken_' ++ (vars.index as String)]" objectStore="Access_Token_Object_Store" target="accessToken">
-				<os:default-value><![CDATA[#[%dw 2.0 
+			<os:retrieve doc:name="Access Token" doc:id="3fc92210-b287-4aab-95bd-cfe80606d5b7" key="accesstoken" objectStore="Access_Token_Object_Store" target="accessToken">
+				<os:default-value ><![CDATA[#[%dw 2.0 
 output application/java
 ---
 ""]]]></os:default-value>
 			</os:retrieve>
-					<choice doc:name="Choice" doc:id="7ec57fff-6c2c-410c-b4d9-015823ff33a3">
+			<choice doc:name="Choice" doc:id="7ec57fff-6c2c-410c-b4d9-015823ff33a3" >
 				<when expression="#[isEmpty(vars.accessToken)]">
 					<ee:transform doc:name="var: httpOperation &amp; Token Payload" doc:id="2f551398-37d4-4743-85bf-5210eaa56c61">
 				<ee:message>
@@ -78,14 +60,8 @@ output application/json
 ---
 {
     "ruc"     : Mule::p('linka.ruc'),
-    "username": if (vars.index == 1) 
-                    Mule::p('secure::linka.csi.username') 
-                else 
-                    Mule::p('secure::linka.epc.username'),
-    "password": if (vars.index == 1) 
-                    Mule::p('secure::linka.csi.password') 
-                else 
-                    Mule::p('secure::linka.epc.password')
+    "username": Mule::p('secure::linka.username'),
+    "password": Mule::p('secure::linka.password')
 }]]></ee:set-payload>
 				</ee:message>
 				<ee:variables>
@@ -98,47 +74,41 @@ output application/json
     "path"    : Mule::p('linka.path.token'),
     "basePath": Mule::p('linka.basePath'),
     "queryParams": {
-        "key"  : if (vars.index == 1) 
-                     Mule::p('secure::linka.csi.username') 
-                 else 
-                     Mule::p('secure::linka.epc.username'),
-        "value": if (vars.index == 1) 
-                     Mule::p('secure::linka.csi.password') 
-                 else 
-                     Mule::p('secure::linka.epc.password')
+        "key"  : Mule::p('secure::linka.username'),
+        "value": Mule::p('secure::linka.password')
     }
 }]]></ee:set-variable>
 				</ee:variables>
 			</ee:transform>
 					<flow-ref doc:name="Get Access Token" doc:id="b4b5e91e-0291-4c94-9c2d-baf476dc2385" name="http-request-subflow" target="accessToken" />
-					<os:store doc:name="Access Token" doc:id="6cf7bfa1-a386-4a21-8e34-7de4d2af0e08" key="#['accesstoken_' ++ (vars.index as String)]" objectStore="Access_Token_Object_Store">
-						<os:value><![CDATA[#[vars.accessToken]]]></os:value>
+					<os:store doc:name="Access Token" doc:id="6cf7bfa1-a386-4a21-8e34-7de4d2af0e08" key="accesstoken" objectStore="Access_Token_Object_Store">
+						<os:value ><![CDATA[#[vars.accessToken]]]></os:value>
 					</os:store>
 				</when>
-						<otherwise>
-					<logger level="INFO" doc:name="Access Token Not Expired" doc:id="b8a25199-fe8c-455a-a275-a2b32eef698d" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "Access Token not expired"&#10;}]' />
+				<otherwise >
+					<logger level="INFO" doc:name="Access Token Not Expired" doc:id="b8a25199-fe8c-455a-a275-a2b32eef698d" message='#[output application/json&#10;---&#10;{&#10;	"correlationId": vars.correlationId,&#10;	"message": "Access Token not expired"&#10;}]'/>
 				</otherwise>
 			</choice>
-					<set-variable value='#[output application/json&#10;---&#10;{&#10;    "method"      : "GET",&#10;    "host"        : Mule::p("linka.host"),&#10;    "port"        : Mule::p("linka.port"),&#10;    "path"        : Mule::p("linka.path.invoices"),&#10;    "basePath"    : Mule::p("linka.basePath"),&#10;    "queryParams" : {&#10;        "sn": vars.currentStagingRow.InvoiceNumber&#10;    },&#10;    "headers": {&#10;        "Authorization": "Bearer " ++ vars.accessToken.access&#10;    }&#10;}]' doc:name="var: httpOperation – Fetch Single Invoice" doc:id="5afc21a1-5d1b-40ac-9965-cdbbd0644735" variableName="httpOperation" />
-					<flow-ref doc:name="Fetch Invoice from Linka" doc:id="bcea5f9a-5249-4ecc-9887-882178bbeec1" name="http-request-subflow" />
-					<ee:transform doc:name="var : invoiceData" doc:id="3cbc000e-d07f-4135-9970-ee1c3091bede">
-				<ee:message>
-					<ee:set-payload><![CDATA[%dw 2.0
+			<set-variable value='#[output application/json&#10;---&#10;{&#10;    "method"      : "GET",&#10;    "host"        : Mule::p("linka.host"),&#10;    "port"        : Mule::p("linka.port"),&#10;    "path"        : Mule::p("linka.path.invoices"),&#10;    "basePath"    : Mule::p("linka.basePath"),&#10;    "queryParams" : {&#10;        "sn": vars.currentStagingRow.InvoiceNumber&#10;    },&#10;    "headers": {&#10;        "Authorization": "Bearer " ++ vars.accessToken.access&#10;    }&#10;}]' doc:name="var: httpOperation – Fetch Single Invoice" doc:id="5afc21a1-5d1b-40ac-9965-cdbbd0644735" variableName="httpOperation" />
+			<flow-ref doc:name="Fetch Invoice from Linka" doc:id="bcea5f9a-5249-4ecc-9887-882178bbeec1" name="http-request-subflow"/>
+			<ee:transform doc:name="var : invoiceData" doc:id="3cbc000e-d07f-4135-9970-ee1c3091bede" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
 payload.results[0]]]></ee:set-payload>
 				</ee:message>
-				<ee:variables>
-					<ee:set-variable variableName="invoiceData"><![CDATA[%dw 2.0
+				<ee:variables >
+					<ee:set-variable variableName="invoiceData" ><![CDATA[%dw 2.0
 output application/json
 ---
 payload.results[0]]]></ee:set-variable>
 				</ee:variables>
 			</ee:transform>
-					<ee:transform doc:name="var: matchedApiInvoice" doc:id="e694abc6-8fa7-42c3-807e-a54d74b893f5">
+			<ee:transform doc:name="var: matchedApiInvoice" doc:id="e694abc6-8fa7-42c3-807e-a54d74b893f5" >
 				<ee:message />
-				<ee:variables>
-					<ee:set-variable variableName="matchedApiInvoice"><![CDATA[%dw 2.0
+				<ee:variables >
+					<ee:set-variable variableName="matchedApiInvoice" ><![CDATA[%dw 2.0
 output application/json
 ---
 do {
@@ -153,8 +123,8 @@ do {
 }]]></ee:set-variable>
 				</ee:variables>
 			</ee:transform>
-					<set-variable value="#[vars.invoiceData.eval_status]" doc:name="var: apiEvalStatus" doc:id="20e6f4bb-cc7b-4135-ad5f-2f635cc53c4c" variableName="apiEvalStatus" />
-					<choice doc:name="eval_status routing" doc:id="196db983-73eb-4c7b-966f-8d9876ff0353">
+			<set-variable value="#[vars.invoiceData.eval_status]" doc:name="var: apiEvalStatus" doc:id="20e6f4bb-cc7b-4135-ad5f-2f635cc53c4c" variableName="apiEvalStatus" />
+			<choice doc:name="eval_status routing" doc:id="196db983-73eb-4c7b-966f-8d9876ff0353">
 						<when expression="#[vars.matchedApiInvoice != null and vars.apiEvalStatus == 3]">
 							<!-- [STUDIO:"Logger"]<logger level="INFO" doc:name="Logger" doc:id="f532267b-84fb-4385-8041-a76fd93a1c25" message="#[%dw 2.0 &#10;output application/json &#10;&#45;&#45;-&#10; { &#10; 	id: vars.currentStagingRow.id,&#10; 	InvoiceNumber: vars.currentStagingRow.InvoiceNumber,&#10; 	from: vars.currentStagingRow.status,&#10; 	to:vars.matchedApiInvoice.eval_status&#10; }&#93;" /> [STUDIO] -->
 					<flow-ref doc:name="Delete Cancelled Invoice" doc:id="f7078235-53fc-4d63-b0ce-c6cacde73b42" name="reconciliation-delete-subflow" />
@@ -167,11 +137,6 @@ do {
 							<logger level="INFO" doc:name="Invoice Already in Sync" doc:id="0f2df1d4-95a6-4562-a70a-440ba9ec2f4e" message='#[%dw 2.0 &#10;output application/json &#10;---&#10; {&#10; 	correlationId: vars.correlationId,&#10; 	message: "Invoice already in sync – no action required"&#10; }]' />
 						</otherwise>
 					</choice>
-				</when>
-				<otherwise >
-					<logger level="INFO" doc:name="Invoice Status Is Null" doc:id="68be0895-07a1-441e-a777-8294e536fc3d" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    "status": "rejected",&#10;    "reason": "Invoice source is null",&#10;    "data": payload&#10;}]'/>
-				</otherwise>
-			</choice>
 		</foreach>
 		<logger level="INFO" doc:name="End Processing" doc:id="998f7f19-8d87-4f79-9573-d5cda7a9ce96" message='#[%dw 2.0 &#10;output application/json &#10;---&#10; { &#10; 	flow: "End of flow: " ++ flow.name, &#10; 	correlationId: vars.correlationId&#10; }]' />
 	</sub-flow>

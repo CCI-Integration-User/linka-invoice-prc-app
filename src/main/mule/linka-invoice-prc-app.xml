@@ -5,9 +5,9 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<flow name="linka-invoice-prc-app-flow" doc:id="5acb6bdb-89b1-4eb4-a519-fc71e12c01a6" initialState="started">
-		<scheduler doc:name="Runs every 6 Hours" doc:id="ef637394-0310-4024-ad29-7968453acfe5" >
+		<scheduler doc:name="Runs every 3 Hours" doc:id="ef637394-0310-4024-ad29-7968453acfe5" >
 			<scheduling-strategy >
-				<cron expression="0 0 0/6 * * ?" timeZone="UTC" />
+				<cron expression="0 0 0/3 * * ?" timeZone="UTC" />
 			</scheduling-strategy>
 		</scheduler>
 		<set-variable value="#[uuid()]" doc:name="var: correlationId" doc:id="78b55f3f-aa0f-4c3f-96a0-c9da66d58f53" variableName="correlationId"/>
@@ -16,9 +16,9 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		<logger level="INFO" doc:name="End Of Transaction" doc:id="ab260e14-6d2b-44e9-a204-1155887a1c76" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    flow : "End of flow : " ++ flow.name,&#10;    message: flow.name ++" has Ended",&#10;    correlationId: vars.correlationId&#10;}]'/>
 	</flow>
 	<flow name="reconcile-invoices-scheduler-flow" doc:id="bc3e7d94-895e-4847-95c6-d1cc319b07a3" >
-		<scheduler doc:name="Runs every 2 Hours" doc:id="c125b5e0-1a12-4378-9b07-94118f277cbb" >
+		<scheduler doc:name="Runs every 1 Hours" doc:id="c125b5e0-1a12-4378-9b07-94118f277cbb" >
 			<scheduling-strategy >
-				<cron expression="0 0 1/2 * * ?" timeZone="UTC"/>
+				<cron expression="0 0 0/1 * * ?" timeZone="UTC"/>
 			</scheduling-strategy>
 		</scheduler>
 		<set-variable value="#[uuid()]" doc:name="var: correlationId" doc:id="93b326fb-90af-4b29-bbcd-1dca6669db09" variableName="correlationId" />
